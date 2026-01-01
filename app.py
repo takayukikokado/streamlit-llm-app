@@ -15,6 +15,32 @@ st.markdown(
 """
 )
 
+# --- OpenAI APIキーの取得（Streamlit CloudのSecrets / 環境変数に対応） ---
+def _get_openai_api_key():
+    # 1) 環境変数（ローカルや一部の実行環境向け）
+    key = os.getenv("OPENAI_API_KEY")
+    if key:
+        return key
+
+    # 2) Streamlit Secrets（Community Cloud推奨）
+    try:
+        if "OPENAI_API_KEY" in st.secrets:
+            return st.secrets["OPENAI_API_KEY"]
+        if "openai" in st.secrets and "api_key" in st.secrets["openai"]:
+            return st.secrets["openai"]["api_key"]
+    except Exception:
+        pass
+
+    return None
+
+_api_key = _get_openai_api_key()
+if not _api_key:
+    st.error('OpenAI APIキーが設定されていません。Streamlit Cloud の「Manage app → Settings → Secrets」に OPENAI_API_KEY を登録してください。')
+    st.stop()
+
+# LangChain / OpenAI クライアントが参照できるよう環境変数へ反映
+os.environ["OPENAI_API_KEY"] = _api_key
+
 from langchain_openai import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage
 
